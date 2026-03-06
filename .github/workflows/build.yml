@@ -42,9 +42,6 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install cargo-ndk
-        run: cargo install cargo-ndk
-
       - name: Check latest moltis release
         id: check
         run: |
@@ -66,17 +63,41 @@ jobs:
           cargo build --target wasm32-wasip2 -p moltis-wasm-calc -p moltis-wasm-web-fetch -p moltis-wasm-web-search --release || true
           cargo run -p moltis-wasm-precompile --release || true
 
-      - name: Build Android Binary (Native Bionic)
+      - name: Build Android Binary (Direct NDK - no cargo-ndk)
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
-          ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
-          NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
-          CARGO_NDK_ANDROID_PLATFORM: 26
-          CFLAGS_aarch64_linux_android: "-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
-          CXXFLAGS_aarch64_linux_android: "-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
+          NDK_TOOLCHAIN: ${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64
         run: |
           cd moltis-src
-          cargo ndk -t aarch64-linux-android -p 26 build --release -p moltis
+
+          # Configure cargo to use NDK toolchain directly
+          mkdir -p .cargo
+          cat > .cargo/config.toml << EOF
+          [target.aarch64-linux-android]
+          linker = "$NDK_TOOLCHAIN/bin/aarch64-linux-android26-clang"
+          ar = "$NDK_TOOLCHAIN/bin/llvm-ar"
+          EOF
+
+          # Set compiler env vars for cc-rs crate
+          export CC_aarch64_linux_android="$NDK_TOOLCHAIN/bin/aarch64-linux-android26-clang"
+          export CXX_aarch64_linux_android="$NDK_TOOLCHAIN/bin/aarch64-linux-android26-clang++"
+          export AR_aarch64_linux_android="$NDK_TOOLCHAIN/bin/llvm-ar"
+
+          # POSIX constant defines for Android
+          export CFLAGS_aarch64_linux_android="-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
+          export CXXFLAGS_aarch64_linux_android="-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
+
+          # Debug: verify tools exist
+          echo "=== NDK Toolchain Check ==="
+          ls -la "$NDK_TOOLCHAIN/bin/aarch64-linux-android26-clang" || echo "MISSING: clang"
+          ls -la "$NDK_TOOLCHAIN/bin/aarch64-linux-android26-clang++" || echo "MISSING: clang++"
+          ls -la "$NDK_TOOLCHAIN/bin/llvm-ar" || echo "MISSING: llvm-ar"
+          echo "=== Rust Toolchain ==="
+          rustc --version
+          rustup target list --installed
+          echo "=== Building ==="
+
+          cargo build --target aarch64-linux-android --release -p moltis
 
       - name: Package
         run: |
