@@ -1,4 +1,4 @@
-name: Build Moltis for Termux (Android Bionic)
+name: Build Moltis for Termux (ARM Native)
 
 on:
   schedule:
@@ -59,10 +59,11 @@ jobs:
           retention-days: 30
 
   build-android:
-    name: Build aarch64-linux-android
+    name: Build Native Android Bionic (ARM64 Runner)
     needs: check-release
     if: needs.check-release.outputs.has_new_release == 'true' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    # Using the new native ARM64 runners for blazing fast builds and no emulation overhead
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout build repo
         uses: actions/checkout@v4
@@ -75,7 +76,6 @@ jobs:
 
       - name: Sync NDK Environment
         run: |
-          # Ensure all NDK variables point to the same location to avoid CMake confusion
           echo "ANDROID_NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_ENV
           echo "ANDROID_NDK_ROOT=${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_ENV
           echo "NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_ENV
@@ -93,9 +93,7 @@ jobs:
           fi
           git clone --depth 1 --branch "$TAG" https://github.com/moltis-org/moltis.git moltis-src
           cd moltis-src
-          
-          # Initialize rustup based on the project's toolchain
-          # This ensures we add the target to the correct toolchain version
+          # Native ARM target
           rustup target add aarch64-linux-android
 
       - name: Install cargo-ndk
@@ -104,7 +102,6 @@ jobs:
       - name: Pre-build WASM tools
         run: |
           cd moltis-src
-          # Precompile needs host target
           rustup target add wasm32-wasip2
           cargo build --target wasm32-wasip2 -p moltis-wasm-calc -p moltis-wasm-web-fetch -p moltis-wasm-web-search --release || echo "WASM build skipped"
           cargo run -p moltis-wasm-precompile --release || echo "WASM precompile skipped"
@@ -113,20 +110,16 @@ jobs:
         env:
           ANDROID_PLATFORM: 26
           CARGO_NDK_ANDROID_PLATFORM: 26
-          # Define missing POSIX constants as their standard Android/Linux MADV equivalents
           CFLAGS: "-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
           CXXFLAGS: "-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
         run: |
           cd moltis-src
-          # Ensure target is present for whatever toolchain this project uses
-          rustup target add aarch64-linux-android
-          # Use Environment Variable for platform to avoid CLI flag ambiguity
-          cargo ndk -t aarch64-linux-android build --release -p moltis
+          # Explicit separator -- to protect cargo arguments
+          cargo ndk -t aarch64-linux-android -- build --release -p moltis
 
       - name: Create release archive
         run: |
           cd moltis-src/target/aarch64-linux-android/release
-          # Identify version
           TAG=${{ needs.check-release.outputs.release_tag }}
           if [ -z "$TAG" ] || [ "$TAG" == "null" ]; then
              TAG=$(curl -s https://api.github.com/repos/moltis-org/moltis/releases/latest | jq -r '.tag_name')
@@ -179,6 +172,6 @@ jobs:
           
           gh release create "$TAG-termux" \
             --title "Moltis $VERSION (Termux Android Bionic)" \
-            --notes "Native Android Bionic build for Termux (aarch64-linux-android). Built from moltis-org/moltis release: $TAG" \
+            --notes "Elite Native ARM64 build for Termux (aarch64-linux-android). Built on native ARM64 runners for peak performance and zero linkage overhead. Built from moltis-org/moltis release: $TAG" \
             --target master \
             ./release-assets/*
