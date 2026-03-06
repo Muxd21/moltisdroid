@@ -86,9 +86,9 @@ jobs:
 
       - name: Setup Android NDK
         id: setup-ndk
-        uses: nndk/ndk-setup@v1
+        uses: nttld/setup-ndk@v1
         with:
-          version: r26b
+          ndk-version: r26b
 
       - name: Install cargo-ndk
         run: cargo install cargo-ndk
