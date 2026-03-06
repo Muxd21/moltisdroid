@@ -69,9 +69,9 @@ jobs:
           ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
           NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
           CARGO_NDK_ANDROID_PLATFORM: 26
-          # Map missing POSIX constants to their Linux/Android counterparts
-          CFLAGS: "-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
-          CXXFLAGS: "-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
+          # Map missing POSIX constants to their Linux/Android counterparts for the target only
+          CFLAGS_aarch64_linux_android: "-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
+          CXXFLAGS_aarch64_linux_android: "-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
         run: |
           cd moltis-src
           cargo ndk -t aarch64-linux-android -p 26 build --release -p moltis
