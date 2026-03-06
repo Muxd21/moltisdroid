@@ -94,7 +94,8 @@ jobs:
             pkgconfig \
             curl \
             jq \
-            bash
+            bash \
+            gcompat
 
       - name: Install Rust musl target
         run: |
