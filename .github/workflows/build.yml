@@ -1,6 +1,9 @@
 name: Build Moltis for Termux
 
 on:
+  push:
+    branches:
+      - master
   schedule:
     - cron: '0 0,6,12,18 * * *'
   workflow_dispatch:
@@ -75,10 +78,14 @@ jobs:
           ar = "$NDK_TOOLCHAIN/bin/llvm-ar"
           EOF
 
-          # Set compiler env vars for cc-rs crate
+          # Set compiler env vars for cc-rs crate and OpenSSL build
           export CC_aarch64_linux_android="$NDK_TOOLCHAIN/bin/aarch64-linux-android26-clang"
           export CXX_aarch64_linux_android="$NDK_TOOLCHAIN/bin/aarch64-linux-android26-clang++"
           export AR_aarch64_linux_android="$NDK_TOOLCHAIN/bin/llvm-ar"
+          export RANLIB_aarch64_linux_android="$NDK_TOOLCHAIN/bin/llvm-ranlib"
+
+          # Put NDK tools on PATH so OpenSSL make can find ranlib, strip, etc.
+          export PATH="$NDK_TOOLCHAIN/bin:$PATH"
 
           # POSIX constant defines for Android
           export CFLAGS_aarch64_linux_android="-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
