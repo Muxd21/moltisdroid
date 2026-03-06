@@ -1,9 +1,6 @@
 name: Build Moltis for Termux
 
 on:
-  push:
-    branches:
-      - master
   schedule:
     - cron: '0 0,6,12,18 * * *'
   workflow_dispatch:
@@ -86,16 +83,6 @@ jobs:
           # POSIX constant defines for Android
           export CFLAGS_aarch64_linux_android="-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
           export CXXFLAGS_aarch64_linux_android="-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
-
-          # Debug: verify tools exist
-          echo "=== NDK Toolchain Check ==="
-          ls -la "$NDK_TOOLCHAIN/bin/aarch64-linux-android26-clang" || echo "MISSING: clang"
-          ls -la "$NDK_TOOLCHAIN/bin/aarch64-linux-android26-clang++" || echo "MISSING: clang++"
-          ls -la "$NDK_TOOLCHAIN/bin/llvm-ar" || echo "MISSING: llvm-ar"
-          echo "=== Rust Toolchain ==="
-          rustc --version
-          rustup target list --installed
-          echo "=== Building ==="
 
           cargo build --target aarch64-linux-android --release -p moltis
 
