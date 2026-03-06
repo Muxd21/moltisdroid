@@ -1,126 +1,119 @@
 #!/bin/bash
 set -e
 
-# Moltis Termux Elite Installer
-# Automatic deployment of Android Bionic AI Stack
+# Moltis Termux Elite Installer (Android Bionic Edition)
+# One-liner to rule them all.
 
-# Colors
+# High-def colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
+WHITE='\033[1;37m'
+GOLD='\033[38;5;220m'
 NC='\033[0m'
 
-echo -e "${CYAN}"
-echo "    __  ___      ____  _      "
-echo "   /  |/  /___  / / /_(_)____ "
-echo "  / /|_/ / __ \/ / __/ / ___/ "
-echo " / /  / / /_/ / / /_/ (__  )  "
-echo "/_/  /_/\____/_/\__/_/____/   "
-echo -e "      Termux Elite Stack${NC}"
-echo "=============================="
+clear
+echo -e "${PURPLE}   __  __  ____  _      _______ _____  _____ ${NC}"
+echo -e "${PURPLE}  |  \/  |/ __ \| |    |__   __|_   _|/ ____|${NC}"
+echo -e "${PURPLE}  | \  / | |  | | |       | |    | | | (___  ${NC}"
+echo -e "${PURPLE}  | |\/| | |  | | |       | |    | |  \___ \ ${NC}"
+echo -e "${PURPLE}  | |  | | |__| | |____   | |   _| |_ ____) |${NC}"
+echo -e "${PURPLE}  |_|  |_|\____/|______|  |_|  |_____|_____/ ${NC}"
+echo -e "         ${GOLD}Android Native Powerhouse${NC}"
+echo "================================================="
 
-# Check for Termux
+# 1. Environment Validation
 if [ ! -d "$PREFIX" ]; then
-    echo -e "${RED}Error: Run this in Termux!${NC}"
+    echo -e "${RED}Error: This stack requires Termux!${NC}"
     exit 1
 fi
 
-# Install dependencies
-echo -e "${YELLOW}Installing system dependencies...${NC}"
-pkg update -y && pkg upgrade -y
-pkg install -y openssh jq curl tar procps -y
+# 2. Dependency Injection
+echo -e "${CYAN}🛰️  Deploying system infrastructure...${NC}"
+pkg update -y && pkg upgrade -y --o "Dpkg::Options::=--force-confold"
+pkg install -y openssh jq curl tar procps iproute2 -y
 
-# Fetch latest release
-echo -e "${YELLOW}Identifying latest Bionic payload...${NC}"
+# 3. Payload Acquisition
+echo -e "${CYAN}🔍 Scanning for latest Bionic payload...${NC}"
 LATEST=$(curl -s https://api.github.com/repos/moltis-org/moltis/releases/latest | jq -r '.tag_name')
 VERSION="${LATEST#v}"
 
-# Download
 DOWNLOAD_URL="https://github.com/Muxd21/moltisdroid/releases/download/${LATEST}-termux/moltis-${VERSION}-aarch64-linux-android.tar.gz"
-echo -e "${YELLOW}Downloading: ${NC}$DOWNLOAD_URL"
 
+echo -e "${CYAN}📥 Downloading:${NC} ${WHITE}moltis-v${VERSION}-android-bionic${NC}"
 if ! curl -sL "$DOWNLOAD_URL" -o "moltis-stack.tar.gz"; then
-    echo -e "${RED}Download failed! Checking fallback...${NC}"
+    echo -e "${RED}❌ Download failed! Build might still be in progress.${NC}"
+    echo "Check status at: https://github.com/Muxd21/moltisdroid/actions"
     exit 1
 fi
 
-# Extract
-echo -e "${YELLOW}Deploying binary...${NC}"
+# 4. Binary Extraction
+echo -e "${CYAN}⚡ Hardening binary...${NC}"
 tar -xzf "moltis-stack.tar.gz"
 chmod +x moltis-termux/moltis
 mv moltis-termux/moltis "$PREFIX/bin/moltis"
 rm -rf moltis-termux "moltis-stack.tar.gz"
 
-# Create claw.sh (The Command Center)
-echo -e "${YELLOW}Creating Command Center (claw.sh)...${NC}"
+# 5. The Command Center (claw.sh)
+echo -e "${CYAN}🛸 Generating Command Center (claw.sh)...${NC}"
 cat << 'EOF' > claw.sh
 #!/bin/bash
 
-# Claw-Mission Launcher
+# Claw-Mission Launcher v2.0
 # Zero-overhead Android AI Stack Control
 
+# Colors
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
-RED='\033[0;31m'
+PURPLE='\033[0;35m'
+WHITE='\033[1;37m'
+GOLD='\033[38;5;220m'
 NC='\033[0m'
 
 clear
-echo -e "${CYAN}🚀 Launching Claw-Mission Stack...${NC}"
+echo -e "${PURPLE}🚀 CLAW-MISSION | MOLTIS ANDROID STACK${NC}"
+echo -e "${WHITE}----------------------------------------${NC}"
 
-# 1. Network Detection
-TAILSCALE_IP=$(tailscale ip -4 2>/dev/null || echo "Not Connected")
+# Detect IPs
+TS_IP=$(tailscale ip -4 2>/dev/null || echo "N/A")
 LOCAL_IP=$(ip addr show | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | cut -d/ -f1 | head -n1)
 
-# 2. Start SSH Services
-echo -e "${YELLOW}[1/3] Initializing Infrastructure...${NC}"
+# Start SSH (Port 2222)
 if ! pgrep sshd > /dev/null; then
+    echo -e "${YELLOW}[INFRA] Starting SSH Environment...${NC}"
     sshd -p 2222
-    echo -e "      ${GREEN}✓ SSH Server active on port 2222${NC}"
-else
-    echo -e "      ${GREEN}✓ SSH Server already running${NC}"
 fi
 
-# 3. Start Moltis AI Stack
-echo -e "${YELLOW}[2/3] Powering up AI Engines...${NC}"
+# Start Moltis (0.0.0.0)
 if ! pgrep moltis > /dev/null; then
-    # Start moltis in background, logging to ~/moltis.log
-    # Port 18789 is the default gateway port
-    # Port 3000 is the dashboard port
+    echo -e "${YELLOW}[AI] Starting Moltis Federation...${NC}"
+    # Standard ports: 3000 (UI), 18789 (API)
     nohup moltis serve --host 0.0.0.0 > ~/moltis.log 2>&1 &
-    echo -e "      ${GREEN}✓ Moltis AI Federation online${NC}"
-else
-    echo -e "      ${GREEN}✓ Moltis AI already active${NC}"
+    sleep 3
 fi
 
-# 4. Finalizing Dashboard
-echo -e "${YELLOW}[3/3] Syncing Matrix...${NC}"
-sleep 2
+echo -e "\n${GOLD}✨ ALL SYSTEMS OPERATIONAL${NC}"
+echo -e "${WHITE}----------------------------------------${NC}"
 
-echo -e "${CYAN}"
-echo "------------------------------------------------"
-echo "    CLAW-MISSION OPERATIONAL STATUS"
-echo "------------------------------------------------"
-echo -e "${NC}🌐 Tailscale IP: ${GREEN}$TAILSCALE_IP${NC}"
-echo -e "${NC}🏠 Local IP:     ${GREEN}$LOCAL_IP${NC}"
-echo ""
-echo -e "🛸 ${CYAN}Mission Control:${NC}    http://${TAILSCALE_IP:-$LOCAL_IP}:3000"
-echo -e "🦞 ${CYAN}OpenClaw Gateway:${NC}   http://${TAILSCALE_IP:-$LOCAL_IP}:18789"
-echo -e "💻 ${CYAN}SSH Access:${NC}         ssh -p 2222 root@$TAILSCALE_IP"
-echo ""
-echo -e "${YELLOW}Stack Status: RUNNING${NC}"
-echo "------------------------------------------------"
-echo "Log: tail -f ~/moltis.log"
-echo "Stop: pkill moltis"
+printf "${CYAN}%-20s${NC} %s\n" "🛰️ Tailscale IP:" "${GOLD}$TS_IP${NC}"
+printf "${CYAN}%-20s${NC} %s\n" "🏠 Local IP:" "$LOCAL_IP"
+printf "${CYAN}%-20s${NC} %s\n" "🛸 Dashboard:" "http://${TS_IP:-$LOCAL_IP}:3000"
+printf "${CYAN}%-20s${NC} %s\n" "🦞 Gateway API:" "http://${TS_IP:-$LOCAL_IP}:18789"
+printf "${CYAN}%-20s${NC} %s\n" "💻 Terminal access:" "ssh -p 2222 root@$TS_IP"
+echo -e "${WHITE}----------------------------------------${NC}"
+echo -e "${WHITE}SSH Password: ${GOLD}root${NC}"
+echo -e "${WHITE}Log Viewer:   ${CYAN}tail -f ~/moltis.log${NC}"
 EOF
 
 chmod +x claw.sh
 
-echo ""
-echo -e "${GREEN}✓ Moltis Android Bionic Stack Installed!${NC}"
-echo -e "Commands available:"
-echo -e "  - ${CYAN}moltis --help${NC} (Direct CLI access)"
-echo -e "  - ${CYAN}./claw.sh${NC}      (Start full stack with dash & SSH)"
-echo ""
-echo -e "${YELLOW}Try it now:${NC} ./claw.sh"
+echo -e "\n${GOLD}✅ DEPLOYMENT COMPLETE!${NC}"
+echo -e "The ${WHITE}Moltis Android Bionic${NC} engine is now installed."
+echo -e "You can now start everything with one command:"
+echo -e "\n    ${CYAN}./claw.sh${NC}\n"
+echo -e "Your visual command center is ready at:"
+echo -e "${PURPLE}https://Muxd21.github.io/moltisdroid/${NC}"

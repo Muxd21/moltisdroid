@@ -76,13 +76,8 @@ jobs:
     if: needs.check-release.outputs.has_new_release == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout moltisdroid
+      - name: Checkout build repo
         uses: actions/checkout@v4
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-linux-android
 
       - name: Setup Android NDK
         id: setup-ndk
@@ -90,19 +85,21 @@ jobs:
         with:
           ndk-version: r26b
 
-      - name: Install cargo-ndk
-        run: cargo install cargo-ndk
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y clang llvm cmake pkg-config libssl-dev jq
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
+
       - name: Checkout moltis source at release tag
         env:
           RELEASE_TAG: ${{ needs.check-release.outputs.release_tag }}
         run: |
-          # If tag is empty (workflow_dispatch run from master without new release), get latest
           TAG=$RELEASE_TAG
           if [ -z "$TAG" ] || [ "$TAG" == "null" ]; then
             TAG=$(curl -s https://api.github.com/repos/moltis-org/moltis/releases/latest | jq -r '.tag_name')
@@ -111,6 +108,8 @@ jobs:
           cd moltis-src
           git fetch --tags
           git checkout "$TAG"
+          # Crucially add the target to the toolchain mandated by the project
+          rustup target add aarch64-linux-android
 
       - name: Build Tailwind CSS
         run: |
