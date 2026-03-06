@@ -1,9 +1,0 @@
-[package]
-name = "moltis-termux-build"
-version = "0.1.0"
-edition = "2024"
-description = "Automated musl builds of moltis for Termux"
-license = "MIT"
-
-[dependencies]
-# No dependencies - this repo is for CI/CD only
