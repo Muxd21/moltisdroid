@@ -209,10 +209,6 @@ jobs:
           # Create new release
           gh release create "$RELEASE_TAG-termux" \
             --title "Moltis $VERSION (Termux musl)" \
-            --notes "Pre-built musl binary for Termux (aarch64-unknown-linux-musl)
-            
-  This build is compatible with Termux on Android without requiring proot.
-  
-  Built from moltis-org/moltis release: $RELEASE_TAG" \
-            --target main \
+            --notes "Pre-built musl binary for Termux (aarch64-unknown-linux-musl). This build is compatible with Termux on Android without requiring proot. Built from moltis-org/moltis release: $RELEASE_TAG" \
+            --target master \
             ./release-assets/*

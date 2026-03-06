@@ -47,7 +47,7 @@ The workflow runs automatically:
 After a successful build, install in Termux with:
 
 ```bash
-# One-liner (replace YOUR_USERNAME)
+# One-liner
 LATEST=$(curl -s https://api.github.com/repos/moltis-org/moltis/releases/latest | jq -r '.tag_name')
 VERSION="${LATEST#v}"
 curl -LO "https://github.com/Muxd21/moltisdroid/releases/download/${LATEST}-termux/moltis-${VERSION}-aarch64-unknown-linux-musl.tar.gz"
