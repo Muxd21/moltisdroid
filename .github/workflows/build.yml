@@ -1,4 +1,4 @@
-name: Build Moltis for Termux (Native Bionic)
+name: Build Moltis for Termux
 
 on:
   schedule:
@@ -24,8 +24,7 @@ env:
 
 jobs:
   build:
-    name: Build Native ARM64 (Bionic)
-    # Using x64 runner to avoid NDK setup issues on ARM runners
+    name: Build Native ARM64 (Termux)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -87,10 +86,9 @@ jobs:
           cp moltis moltis-termux/
           chmod +x moltis-termux/moltis
           
-          # Universal filenames for the one-liner and install scripts
-          tar -czvf "moltis-${VERSION}-bionic-arm64.tar.gz" moltis-termux/
-          cp "moltis-${VERSION}-bionic-arm64.tar.gz" "moltis-musl-arm64.tar.gz"
-          cp "moltis-${VERSION}-bionic-arm64.tar.gz" "moltis-bionic-arm64.tar.gz"
+          # Clean, unified naming
+          tar -czvf "moltis-${VERSION}-termux-aarch64.tar.gz" moltis-termux/
+          cp "moltis-${VERSION}-termux-aarch64.tar.gz" "moltis-termux-aarch64.tar.gz"
 
       - name: Create Release
         if: github.event.inputs.dry_run != 'true'
@@ -106,7 +104,7 @@ jobs:
           fi
           
           gh release create "${TAG}-termux" \
-            --title "Moltis ${VERSION} (Native ARM64)" \
-            --notes "Native Bionic build for Termux. Direct linkage to Android libc for maximum performance. Source: moltis-org/moltis@${TAG}" \
+            --title "Moltis ${VERSION} (Termux Edition)" \
+            --notes "Native Termux build. Direct linkage to Android libc for maximum performance. Source: moltis-org/moltis@${TAG}" \
             --target master \
             ./*.tar.gz
