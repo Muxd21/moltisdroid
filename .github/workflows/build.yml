@@ -70,10 +70,14 @@ jobs:
 
       - name: Build Static Binary
         env:
-          CC: musl-gcc
+          CC: clang
+          CXX: clang++
           OPENSSL_STATIC: 1
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: musl-gcc
-          RUSTFLAGS: "-C target-feature=+crt-static"
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: clang
+          RUSTFLAGS: "-C target-feature=+crt-static -C link-arg=-static -C link-self-contained=yes"
+          # Ensure clang uses musl headers
+          CFLAGS: "-I/usr/include/aarch64-linux-musl"
+          CXXFLAGS: "-I/usr/include/aarch64-linux-musl"
         run: |
           cd moltis-src
           cargo build --release --target aarch64-unknown-linux-musl --bin moltis
