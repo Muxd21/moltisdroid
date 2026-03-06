@@ -38,8 +38,6 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-linux-android
 
       - name: Install cargo-ndk
         run: cargo install cargo-ndk
@@ -56,6 +54,7 @@ jobs:
         run: |
           git clone --depth 1 --branch "${{ steps.check.outputs.tag }}" https://github.com/moltis-org/moltis.git moltis-src
           cd moltis-src
+          rustup target add aarch64-linux-android
           rustup target add wasm32-wasip2
 
       - name: Build WASM & Precompile
@@ -67,6 +66,8 @@ jobs:
       - name: Build Android Binary (Native Bionic)
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
+          NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
           CARGO_NDK_ANDROID_PLATFORM: 26
           # Map missing POSIX constants to their Linux/Android counterparts
           CFLAGS: "-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
