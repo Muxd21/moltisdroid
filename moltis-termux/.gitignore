@@ -1,0 +1,21 @@
+# Build artifacts
+target/
+*.tar.gz
+*.sha256
+
+# Stored version tracking
+.stored_version
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Logs
+*.log
