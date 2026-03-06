@@ -46,8 +46,6 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-unknown-linux-musl
 
       - name: Check latest moltis release
         id: check
@@ -69,12 +67,15 @@ jobs:
         if: steps.check.outputs.should_build == 'true'
         run: |
           git clone --depth 1 --branch "${{ steps.check.outputs.tag }}" https://github.com/moltis-org/moltis.git moltis-src
+          cd moltis-src
+          # Install targets for the specific toolchain this project uses
+          rustup target add aarch64-unknown-linux-musl
+          rustup target add wasm32-wasip2
 
       - name: Pre-build WASM tools
         if: steps.check.outputs.should_build == 'true'
         run: |
           cd moltis-src
-          rustup target add wasm32-wasip2
           cargo build --target wasm32-wasip2 -p moltis-wasm-calc -p moltis-wasm-web-fetch -p moltis-wasm-web-search --release || echo "WASM build failed (optional)"
           cargo run -p moltis-wasm-precompile --release || echo "Precompile failed (optional)"
 
