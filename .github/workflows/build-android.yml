@@ -112,9 +112,8 @@ jobs:
       - name: Build Android binary (Native Bionic)
         run: |
           cd moltis-src
-          # Use cargo-ndk with correct flags and a robust API level (24+ is better for modern Rust)
-          # We use -p moltis to only build the main binary
-          cargo ndk -t aarch64-linux-android -p 24 build --release -p moltis
+          # Use --android-platform instead of -p to avoid confusion with cargo's --package flag
+          cargo ndk -t aarch64-linux-android --android-platform 24 build --release -p moltis
 
       - name: Create release archive
         run: |
