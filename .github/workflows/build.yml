@@ -1,6 +1,9 @@
 name: Build Moltis for Termux
 
 on:
+  push:
+    branches:
+      - master
   schedule:
     - cron: '0 0,6,12,18 * * *'
   workflow_dispatch:
