@@ -84,13 +84,11 @@ jobs:
       - name: Install dependencies
         run: |
           apk add --no-cache \
+            build-base \
             musl-dev \
-            musl-tools \
             clang \
             llvm \
             cmake \
-            make \
-            g++ \
             git \
             openssl-dev \
             pkgconfig \
