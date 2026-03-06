@@ -112,8 +112,9 @@ jobs:
       - name: Build Android binary (Native Bionic)
         run: |
           cd moltis-src
-          # Use --android-platform instead of -p to avoid confusion with cargo's --package flag
-          cargo ndk -t aarch64-linux-android --android-platform 24 build --release -p moltis
+          # Use Environment Variable for platform to avoid CLI flag ambiguity
+          # Use -- to separate cargo-ndk arguments from cargo arguments
+          CARGO_NDK_ANDROID_PLATFORM=24 cargo ndk -t aarch64-linux-android -- build --release -p moltis
 
       - name: Create release archive
         run: |
