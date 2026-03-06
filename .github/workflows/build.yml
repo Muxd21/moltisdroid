@@ -74,8 +74,7 @@ jobs:
           CXXFLAGS: "-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
         run: |
           cd moltis-src
-          # Use explicit separator -- to prevent argument confusion
-          cargo ndk -t aarch64-linux-android -- build --release -p moltis
+          cargo ndk -t aarch64-linux-android -p 26 build --release -p moltis
 
       - name: Package
         run: |
