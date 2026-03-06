@@ -1,4 +1,4 @@
-name: Build Moltis for Termux (Native ARM64)
+name: Build Moltis for Termux (Native Bionic)
 
 on:
   schedule:
@@ -24,28 +24,26 @@ env:
 
 jobs:
   build:
-    name: Build Native ARM64 (Musl)
-    runs-on: ubuntu-24.04-arm
+    name: Build Native ARM64 (Bionic)
+    # Using x64 runner to avoid NDK setup issues on ARM runners
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            musl-tools \
-            clang \
-            llvm \
-            cmake \
-            make \
-            pkg-config \
-            libssl-dev \
-            jq \
-            build-essential
+      - name: Setup Android NDK
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26b
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
 
       - name: Check latest moltis release
         id: check
@@ -59,7 +57,6 @@ jobs:
         run: |
           git clone --depth 1 --branch "${{ steps.check.outputs.tag }}" https://github.com/moltis-org/moltis.git moltis-src
           cd moltis-src
-          rustup target add aarch64-unknown-linux-musl
           rustup target add wasm32-wasip2
 
       - name: Build WASM & Precompile
@@ -68,23 +65,21 @@ jobs:
           cargo build --target wasm32-wasip2 -p moltis-wasm-calc -p moltis-wasm-web-fetch -p moltis-wasm-web-search --release || true
           cargo run -p moltis-wasm-precompile --release || true
 
-      - name: Build Static Binary
+      - name: Build Android Binary (Native Bionic)
         env:
-          CC: clang
-          CXX: clang++
-          OPENSSL_STATIC: 1
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: clang
-          RUSTFLAGS: "-C target-feature=+crt-static -C link-arg=-static -C link-self-contained=yes"
-          # Ensure clang uses musl headers
-          CFLAGS: "-I/usr/include/aarch64-linux-musl"
-          CXXFLAGS: "-I/usr/include/aarch64-linux-musl"
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          CARGO_NDK_ANDROID_PLATFORM: 26
+          # Map missing POSIX constants to their Linux/Android counterparts
+          CFLAGS: "-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
+          CXXFLAGS: "-DPOSIX_MADV_WILLNEED=MADV_WILLNEED -DPOSIX_MADV_RANDOM=MADV_RANDOM"
         run: |
           cd moltis-src
-          cargo build --release --target aarch64-unknown-linux-musl --bin moltis
+          # Use explicit separator -- to prevent argument confusion
+          cargo ndk -t aarch64-linux-android -- build --release -p moltis
 
       - name: Package
         run: |
-          cd moltis-src/target/aarch64-unknown-linux-musl/release
+          cd moltis-src/target/aarch64-linux-android/release
           TAG="${{ steps.check.outputs.tag }}"
           VERSION="${{ steps.check.outputs.version }}"
           
@@ -92,10 +87,10 @@ jobs:
           cp moltis moltis-termux/
           chmod +x moltis-termux/moltis
           
-          # Versioned archive
-          tar -czvf "moltis-${VERSION}-musl-arm64.tar.gz" moltis-termux/
-          # Version-less for one-liner
-          cp "moltis-${VERSION}-musl-arm64.tar.gz" "moltis-musl-arm64.tar.gz"
+          # Universal filenames for the one-liner and install scripts
+          tar -czvf "moltis-${VERSION}-bionic-arm64.tar.gz" moltis-termux/
+          cp "moltis-${VERSION}-bionic-arm64.tar.gz" "moltis-musl-arm64.tar.gz"
+          cp "moltis-${VERSION}-bionic-arm64.tar.gz" "moltis-bionic-arm64.tar.gz"
 
       - name: Create Release
         if: github.event.inputs.dry_run != 'true'
@@ -104,7 +99,7 @@ jobs:
           TAG: ${{ steps.check.outputs.tag }}
           VERSION: ${{ steps.check.outputs.version }}
         run: |
-          cd moltis-src/target/aarch64-unknown-linux-musl/release
+          cd moltis-src/target/aarch64-linux-android/release
           
           if gh release view "${TAG}-termux" &>/dev/null; then
             gh release delete "${TAG}-termux" --yes --cleanup-tag
@@ -112,6 +107,6 @@ jobs:
           
           gh release create "${TAG}-termux" \
             --title "Moltis ${VERSION} (Native ARM64)" \
-            --notes "Statically linked musl binary for Termux. Zero dependencies. Source: moltis-org/moltis@${TAG}" \
+            --notes "Native Bionic build for Termux. Direct linkage to Android libc for maximum performance. Source: moltis-org/moltis@${TAG}" \
             --target master \
             ./*.tar.gz
